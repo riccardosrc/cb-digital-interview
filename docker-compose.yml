@@ -1,0 +1,17 @@
+services:
+  api:
+    container_name: cb-digital-interview-be
+    image: cb-digital-interview-be-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deploy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env
+    ports:
+      - 5000:5000
+    # depends_on:
+    #   - database
