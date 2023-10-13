@@ -23,6 +23,15 @@ RUN pnpm run build
 RUN pnpm prune --prod
 
 # 
+# Development Stage
+# 
+FROM base as development
+WORKDIR /app
+COPY . .
+COPY --from=dependencies /app/node_modules ./node_modules
+CMD ["pnpm", "run", "start:dev"]
+
+# 
 # Run Stage
 # 
 FROM base as deploy
