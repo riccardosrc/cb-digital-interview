@@ -5,12 +5,21 @@ export class DatabaseEnvSchema {
   @IsString()
   uri: string;
 
+  @IsString()
+  user: string;
+
+  @IsString()
+  password: string;
+
+  @IsString()
+  name: string;
+
   constructor(env: RawEnv) {
-    const user = env.DATABASE_USER;
-    const password = env.DATABASE_PASSWORD;
+    this.user = env.DATABASE_USER;
+    this.password = env.DATABASE_PASSWORD;
+    this.name = env.DATABASE_NAME;
     const host = env.DATABASE_HOST;
     const port = +env.DATABASE_PORT;
-    const name = env.DATABASE_NAME;
-    this.uri = `mongodb://${user}:${password}@${host}:${port}/${name}`;
+    this.uri = `mongodb://${host}:${port}`;
   }
 }
