@@ -10,6 +10,8 @@ RUN npm i -g pnpm
 FROM base as dependencies
 WORKDIR /app
 COPY package.json ./
+# Inform Puppeteer to skip installing Chrome. We'll be using the installed package.
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN pnpm i
 
 # 
@@ -29,6 +31,17 @@ FROM base as development
 WORKDIR /app
 COPY . .
 COPY --from=dependencies /app/node_modules ./node_modules
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Installs Chromium package for puppeteer
+RUN apk add --no-cache \
+  chromium \
+  nss \
+  freetype \
+  harfbuzz \
+  ca-certificates \
+  ttf-freefont \
+  nodejs \
+  yarn
 CMD ["pnpm", "run", "start:dev"]
 
 # 
@@ -38,4 +51,15 @@ FROM base as deploy
 WORKDIR /app
 COPY --from=build /app/dist/ ./dist/
 COPY --from=build /app/node_modules ./node_modules
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Installs Chromium package for puppeteer
+RUN apk add --no-cache \
+  chromium \
+  nss \
+  freetype \
+  harfbuzz \
+  ca-certificates \
+  ttf-freefont \
+  nodejs \
+  yarn
 CMD [ "node", "dist/main.js" ]
