@@ -10,5 +10,6 @@ import { Player, PlayerSchema } from './entities/player.entity';
   ],
   controllers: [PlayersController],
   providers: [PlayersService],
+  exports: [PlayersService],
 })
 export class PlayersModule {}

@@ -2,6 +2,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Browser, launch } from 'puppeteer';
 import { PlayerData } from '../players/types/player-data.interface';
+import { PlayersService } from '../players/players.service';
 
 @Injectable()
 export class ScraperService implements OnApplicationBootstrap {
@@ -9,7 +10,10 @@ export class ScraperService implements OnApplicationBootstrap {
   private logger: Logger;
   private scarpeBaseUrl: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private playersService: PlayersService,
+  ) {
     this.logger = new Logger(ScraperService.name);
     this.scarpeBaseUrl = this.configService.get('app.scrapingUrl');
   }
@@ -71,8 +75,11 @@ export class ScraperService implements OnApplicationBootstrap {
             positionCell,
             nationalityCell,
           ] = row;
+          const nameLinkEl = nameCell.firstElementChild;
+          const name = nameLinkEl?.innerHTML ?? nameCell.innerHTML;
           return {
-            name: nameCell.innerHTML,
+            name,
+            detailLink: nameLinkEl?.getAttribute('href'),
             position: positionCell.innerHTML,
             nationality: nationalityCell.innerHTML,
             age: +ageCell.innerHTML,
@@ -109,7 +116,10 @@ export class ScraperService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     await this.startBrowser();
-    await this.scrapeLeague('Serie A');
+    const playersByClub = await this.scrapeLeague('Serie A');
+    playersByClub.forEach(({ club, players }) =>
+      this.playersService.syncClubPlayers(club, players),
+    );
     await this.closeBrowser();
   }
 }

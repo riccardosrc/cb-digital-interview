@@ -5,4 +5,5 @@ export interface PlayerData {
   yearlySalary: string;
   position: string;
   nationality: string;
+  detailLink?: string;
 }

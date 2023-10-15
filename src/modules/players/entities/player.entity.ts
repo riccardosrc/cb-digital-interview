@@ -25,6 +25,9 @@ export class Player {
 
   @Prop()
   nationality: string;
+
+  @Prop()
+  detailLink?: string;
 }
 
 export const PlayerSchema = SchemaFactory.createForClass(Player);

@@ -23,11 +23,13 @@ export class PlayersService {
       );
     } catch (error) {
       this.logger.error(`${club} players failed creation`);
+      throw error;
     }
   }
 
   private async deleteClubPlayers(club: string) {
-    this.playerModel.deleteMany({ club });
+    const { deletedCount } = await this.playerModel.deleteMany({ club });
+    this.logger.log(`${club} players deleted successfullt (${deletedCount})`);
   }
 
   async syncClubPlayers(club: string, players: PlayerData[]) {
