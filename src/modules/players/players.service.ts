@@ -3,6 +3,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Player } from './entities/player.entity';
 import { PlayerData } from './types/player-data.interface';
+import {
+  PaginatedResponse,
+  PaginationDto,
+} from 'src/common/types/pagination.dto';
 
 @Injectable()
 export class PlayersService {
@@ -11,6 +15,11 @@ export class PlayersService {
     this.logger = new Logger(PlayersService.name);
   }
 
+  /**
+   * create all club's players
+   * @param club target club
+   * @param players club's players
+   */
   private async createClubPlayers(club: string, players: PlayerData[]) {
     const playersWithClub: Partial<Player>[] = players.map((player) => ({
       ...player,
@@ -27,21 +36,46 @@ export class PlayersService {
     }
   }
 
+  /**
+   * delete all players that play fro the given club
+   * @param club target club
+   */
   private async deleteClubPlayers(club: string) {
     const { deletedCount } = await this.playerModel.deleteMany({ club });
     this.logger.log(`${club} players deleted successfully (${deletedCount})`);
   }
 
+  /**
+   * save all club's players
+   * @param club target club
+   * @param players club's players
+   */
   async syncClubPlayers(club: string, players: PlayerData[]) {
     await this.deleteClubPlayers(club);
     await this.createClubPlayers(club, players);
   }
 
-  findAll() {
-    return `This action returns all players`;
+  /**
+   * get player list
+   * @param paginationDto pagination request
+   * @returns paginated players
+   */
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResponse<Player>> {
+    const { skip, limit } = paginationDto.offset;
+    const players = await this.playerModel.find().limit(limit).skip(skip);
+    const count = await this.playerModel.count();
+    return new PaginatedResponse<Player>(players, count);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} player`;
+  /**
+   * Get player details by id, with salary history if available
+   * @param id player id
+   * @returns player informations
+   */
+  async findOne(id: string): Promise<Player> {
+    const player = await this.playerModel.findById(id);
+    return player;
   }
 }

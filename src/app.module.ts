@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
@@ -7,6 +7,7 @@ import { configModuleOptions } from './config/env';
 import { mongooseOptions } from './config/database';
 import { PlayersModule } from './modules/players/players.module';
 import { ScraperModule } from './modules/scraper/scraper.module';
+import { APP_PIPE } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -16,6 +17,9 @@ import { ScraperModule } from './modules/scraper/scraper.module';
     ScraperModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_PIPE, useValue: new ValidationPipe({ transform: true }) },
+  ],
 })
 export class AppModule {}
