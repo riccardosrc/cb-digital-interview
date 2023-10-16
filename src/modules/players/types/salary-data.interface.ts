@@ -1,7 +1,7 @@
 export interface SalaryData {
   year: number;
-  weeklySalary: string;
-  yearlySalary: string;
+  weeklySalary: number;
+  yearlySalary: number;
   club: string;
   position: string;
   league: string;

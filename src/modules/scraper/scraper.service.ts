@@ -145,8 +145,8 @@ export class ScraperService
             position: positionCell.innerHTML,
             nationality: nationalityCell.innerHTML,
             age: +ageCell.innerHTML,
-            weeklySalary: weeklySalaryCell.innerHTML,
-            yearlySalary: yearlySalaryCell.innerHTML,
+            weeklySalary: +weeklySalaryCell.innerHTML.replace(/[^0-9]/g, ''),
+            yearlySalary: +yearlySalaryCell.innerHTML.replace(/[^0-9]/g, ''),
           };
         });
     });
@@ -195,8 +195,8 @@ export class ScraperService
           ] = row;
           return {
             year: +yearCell.innerHTML,
-            weeklySalary: weeklySalaryCell.innerHTML,
-            yearlySalary: yearlySalaryCell.innerHTML,
+            weeklySalary: +weeklySalaryCell.innerHTML.replace(/[^0-9]/g, ''),
+            yearlySalary: +yearlySalaryCell.innerHTML.replace(/[^0-9]/g, ''),
             club: clubCell.innerHTML,
             position: positionCell.innerHTML,
             league: leagueCell.innerHTML,

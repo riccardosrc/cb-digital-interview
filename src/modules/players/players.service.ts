@@ -109,12 +109,15 @@ export class PlayersService implements OnApplicationBootstrap {
   async findOne(id: string): Promise<Player> {
     const player = await this.playerModel.findById(id);
     if (!player.detailLink || player.salaryHistory.length > 0) {
-      // salary history not available or already saved
+      // salary history not available or already saved!
       return player;
     }
     if (player.detailLink && player.salaryHistory.length === 0) {
       player.salaryHistory =
         await this.scarperService.scrapePlayerSalaryHistory(player.detailLink);
+      this.logger.log(
+        `retrieved ${player.salaryHistory.length} salary entries for ${player.name}`,
+      );
       const withSalary = await player.save();
       return withSalary;
     }
@@ -123,14 +126,14 @@ export class PlayersService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     // sync all supported players
-    // await Promise.allSettled(
-    //   this.leagueToScrape.map(async (leagueIdentifier) => {
-    //     const playersByClub =
-    //       await this.scarperService.scrapeLeague(leagueIdentifier);
-    //     playersByClub.forEach(({ club, players }) =>
-    //       this.syncClubPlayers(leagueIdentifier, club, players),
-    //     );
-    //   }),
-    // );
+    await Promise.allSettled(
+      this.leagueToScrape.map(async (leagueIdentifier) => {
+        const playersByClub =
+          await this.scarperService.scrapeLeague(leagueIdentifier);
+        playersByClub.forEach(({ club, players }) =>
+          this.syncClubPlayers(leagueIdentifier, club, players),
+        );
+      }),
+    );
   }
 }

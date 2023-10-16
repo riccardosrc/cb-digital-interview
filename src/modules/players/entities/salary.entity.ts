@@ -12,10 +12,10 @@ export class Salary {
   club: string;
 
   @Prop()
-  weeklySalary: string;
+  weeklySalary: number;
 
   @Prop()
-  yearlySalary: string;
+  yearlySalary: number;
 
   @Prop()
   age: number;
