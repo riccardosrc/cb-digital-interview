@@ -9,6 +9,7 @@ export class ScraperService implements OnApplicationBootstrap {
   private browserInstance: Browser;
   private logger: Logger;
   private scarpeBaseUrl: string;
+  private readonly leagueToScrape = ['Serie A'];
 
   constructor(
     private configService: ConfigService,
@@ -18,6 +19,9 @@ export class ScraperService implements OnApplicationBootstrap {
     this.scarpeBaseUrl = this.configService.get('app.scrapingUrl');
   }
 
+  /**
+   * start browser instance for scraping
+   */
   private async startBrowser() {
     try {
       this.browserInstance = await launch({
@@ -30,6 +34,9 @@ export class ScraperService implements OnApplicationBootstrap {
     }
   }
 
+  /**
+   * close browser instance
+   */
   private async closeBrowser() {
     try {
       await this.browserInstance.close();
@@ -39,6 +46,11 @@ export class ScraperService implements OnApplicationBootstrap {
     }
   }
 
+  /**
+   * get page by url
+   * @param url desired url page
+   * @returns page
+   */
   async getPage(url: string) {
     const page = await this.browserInstance.newPage();
     try {
@@ -52,6 +64,11 @@ export class ScraperService implements OnApplicationBootstrap {
     }
   }
 
+  /**
+   * scrape all the clubs that belong to target league
+   * @param league league identifier
+   * @returns players informations, group by club
+   */
   async scrapeLeague(league: string) {
     const clubLinks = await this.getClubLinksByLeague(league);
     const playersByClub = await Promise.all(
@@ -60,6 +77,11 @@ export class ScraperService implements OnApplicationBootstrap {
     return playersByClub;
   }
 
+  /**
+   * scrape all the players data from the club page
+   * @param clubLink link for club's players list
+   * @returns players data
+   */
   async scrapeClubPlayers(clubLink: string) {
     const page = await this.getPage(`${this.scarpeBaseUrl}${clubLink}`);
     const playersData: PlayerData[] = await page.evaluate(() => {
@@ -92,6 +114,11 @@ export class ScraperService implements OnApplicationBootstrap {
     return { players: playersData, club };
   }
 
+  /**
+   * utility to extract club name from club link
+   * @param clubLink link of the club
+   * @returns club name
+   */
   private getClubNameFromLink(clubLink: string) {
     return clubLink
       .split('/')
@@ -99,7 +126,12 @@ export class ScraperService implements OnApplicationBootstrap {
       .pop();
   }
 
-  async getClubLinksByLeague(league: string) {
+  /**
+   * scrape all the links for clubs pages of the desired league
+   * @param league league target identifier
+   * @returns all the clubs links of the league
+   */
+  private async getClubLinksByLeague(league: string) {
     const page = await this.getPage(`${this.scarpeBaseUrl}/football`);
     const clubLinks = await page.evaluate((leagueIdentifier) => {
       const headings = Array.from(document.querySelectorAll('h2'));
@@ -116,9 +148,13 @@ export class ScraperService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     await this.startBrowser();
-    const playersByClub = await this.scrapeLeague('Serie A');
-    playersByClub.forEach(({ club, players }) =>
-      this.playersService.syncClubPlayers(club, players),
+    await Promise.allSettled(
+      this.leagueToScrape.map(async (leagueIdentifier) => {
+        const playersByClub = await this.scrapeLeague(leagueIdentifier);
+        playersByClub.forEach(({ club, players }) =>
+          this.playersService.syncClubPlayers(leagueIdentifier, club, players),
+        );
+      }),
     );
     await this.closeBrowser();
   }

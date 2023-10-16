@@ -17,13 +17,19 @@ export class PlayersService {
 
   /**
    * create all club's players
+   * @param league target league
    * @param club target club
    * @param players club's players
    */
-  private async createClubPlayers(club: string, players: PlayerData[]) {
+  private async createClubPlayers(
+    league: string,
+    club: string,
+    players: PlayerData[],
+  ) {
     const playersWithClub: Partial<Player>[] = players.map((player) => ({
       ...player,
       club,
+      league,
     }));
     try {
       const createdPlayers = await this.playerModel.create(playersWithClub);
@@ -38,21 +44,26 @@ export class PlayersService {
 
   /**
    * delete all players that play fro the given club
+   * @param league target league
    * @param club target club
    */
-  private async deleteClubPlayers(club: string) {
-    const { deletedCount } = await this.playerModel.deleteMany({ club });
+  private async deleteClubPlayers(league: string, club: string) {
+    const { deletedCount } = await this.playerModel.deleteMany({
+      club,
+      league,
+    });
     this.logger.log(`${club} players deleted successfully (${deletedCount})`);
   }
 
   /**
    * save all club's players
+   * @param league target league
    * @param club target club
    * @param players club's players
    */
-  async syncClubPlayers(club: string, players: PlayerData[]) {
-    await this.deleteClubPlayers(club);
-    await this.createClubPlayers(club, players);
+  async syncClubPlayers(league: string, club: string, players: PlayerData[]) {
+    await this.deleteClubPlayers(league, club);
+    await this.createClubPlayers(league, club, players);
   }
 
   /**

@@ -9,6 +9,9 @@ export class Player {
   name: string;
 
   @Prop()
+  league: string;
+
+  @Prop()
   club: string;
 
   @Prop()
