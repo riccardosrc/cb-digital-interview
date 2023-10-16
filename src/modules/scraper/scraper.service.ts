@@ -1,23 +1,38 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+  OnApplicationShutdown,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Browser, launch } from 'puppeteer';
 import { PlayerData } from '../players/types/player-data.interface';
-import { PlayersService } from '../players/players.service';
+import { SalaryData } from '../players/types/salary-data.interface';
 
 @Injectable()
-export class ScraperService implements OnApplicationBootstrap {
+export class ScraperService
+  implements OnApplicationBootstrap, OnApplicationShutdown
+{
   private browserInstance: Browser;
   private logger: Logger;
   private scarpeBaseUrl: string;
-  private readonly leagueToScrape = ['Serie A'];
 
-  constructor(
-    private configService: ConfigService,
-    private playersService: PlayersService,
-  ) {
+  constructor(private configService: ConfigService) {
     this.logger = new Logger(ScraperService.name);
     this.scarpeBaseUrl = this.configService.get('app.scrapingUrl');
   }
+
+  async onApplicationBootstrap() {
+    await this.startBrowser();
+  }
+
+  async onApplicationShutdown(_signal?: string) {
+    await this.closeBrowser();
+  }
+
+  // #####################
+  // Browser Lifecycle
+  // #####################
 
   /**
    * start browser instance for scraping
@@ -51,7 +66,7 @@ export class ScraperService implements OnApplicationBootstrap {
    * @param url desired url page
    * @returns page
    */
-  async getPage(url: string) {
+  private async getPage(url: string) {
     const page = await this.browserInstance.newPage();
     try {
       await page.goto(url, {
@@ -63,6 +78,10 @@ export class ScraperService implements OnApplicationBootstrap {
       throw error;
     }
   }
+
+  // #####################
+  // League and Players
+  // #####################
 
   /**
    * scrape all the clubs that belong to target league
@@ -94,6 +113,7 @@ export class ScraperService implements OnApplicationBootstrap {
       const clubLinks = links.filter((link) => !link.includes('highest-paid'));
       return clubLinks;
     }, league);
+    page.close();
     return clubLinks;
   }
 
@@ -102,7 +122,7 @@ export class ScraperService implements OnApplicationBootstrap {
    * @param clubLink link for club's players list
    * @returns players data
    */
-  async scrapeClubPlayers(clubLink: string) {
+  private async scrapeClubPlayers(clubLink: string) {
     const page = await this.getPage(`${this.scarpeBaseUrl}${clubLink}`);
     const playersData: PlayerData[] = await page.evaluate(() => {
       return Array.from(document.querySelectorAll('tbody > tr'))
@@ -130,6 +150,7 @@ export class ScraperService implements OnApplicationBootstrap {
           };
         });
     });
+    page.close();
     const club = this.getClubNameFromLink(clubLink);
     return { players: playersData, club };
   }
@@ -146,16 +167,45 @@ export class ScraperService implements OnApplicationBootstrap {
       .pop();
   }
 
-  async onApplicationBootstrap() {
-    await this.startBrowser();
-    await Promise.allSettled(
-      this.leagueToScrape.map(async (leagueIdentifier) => {
-        const playersByClub = await this.scrapeLeague(leagueIdentifier);
-        playersByClub.forEach(({ club, players }) =>
-          this.playersService.syncClubPlayers(leagueIdentifier, club, players),
-        );
-      }),
-    );
-    await this.closeBrowser();
+  // #####################
+  // Salary History
+  // #####################
+
+  /**
+   * get salary history by player url
+   * @param playerUrl player salary history url
+   * @returns array with salary history
+   */
+  async scrapePlayerSalaryHistory(playerUrl: string) {
+    const url = `${this.scarpeBaseUrl}${playerUrl}`;
+    const page = await this.getPage(url);
+    const salaryHistory: SalaryData[] = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll('tbody > tr'))
+        .map((row) => Array.from(row.children))
+        .map((row) => {
+          const [
+            yearCell,
+            weeklySalaryCell,
+            yearlySalaryCell,
+            clubCell,
+            positionCell,
+            leagueCell,
+            ageCell,
+            contractExpiryCell,
+          ] = row;
+          return {
+            year: +yearCell.innerHTML,
+            weeklySalary: weeklySalaryCell.innerHTML,
+            yearlySalary: yearlySalaryCell.innerHTML,
+            club: clubCell.innerHTML,
+            position: positionCell.innerHTML,
+            league: leagueCell.innerHTML,
+            age: +ageCell.innerHTML,
+            contractExpiry: contractExpiryCell.innerHTML,
+          };
+        });
+    });
+    page.close();
+    return salaryHistory;
   }
 }

@@ -1,9 +1,8 @@
-export interface PlayerData {
+import { SalaryData } from './salary-data.interface';
+
+export interface PlayerData
+  extends Omit<SalaryData, 'year' | 'contractExpiry' | 'club' | 'league'> {
   name: string;
-  age: number;
-  weeklySalary: string;
-  yearlySalary: string;
-  position: string;
   nationality: string;
   detailLink?: string;
 }

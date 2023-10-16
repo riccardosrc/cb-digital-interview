@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Player } from './entities/player.entity';
@@ -7,11 +7,17 @@ import {
   PaginatedResponse,
   PaginationDto,
 } from 'src/common/types/pagination.dto';
+import { ScraperService } from '../scraper/scraper.service';
 
 @Injectable()
-export class PlayersService {
+export class PlayersService implements OnApplicationBootstrap {
   private logger: Logger;
-  constructor(@InjectModel(Player.name) private playerModel: Model<Player>) {
+  private readonly leagueToScrape = ['Serie A'];
+
+  constructor(
+    @InjectModel(Player.name) private playerModel: Model<Player>,
+    private scarperService: ScraperService,
+  ) {
     this.logger = new Logger(PlayersService.name);
   }
 
@@ -87,6 +93,29 @@ export class PlayersService {
    */
   async findOne(id: string): Promise<Player> {
     const player = await this.playerModel.findById(id);
+    if (!player.detailLink || player.salaryHistory.length > 0) {
+      // salary history not available or already saved
+      return player;
+    }
+    if (player.detailLink && player.salaryHistory.length === 0) {
+      player.salaryHistory =
+        await this.scarperService.scrapePlayerSalaryHistory(player.detailLink);
+      const withSalary = await player.save();
+      return withSalary;
+    }
     return player;
+  }
+
+  async onApplicationBootstrap() {
+    // sync all supported players
+    // await Promise.allSettled(
+    //   this.leagueToScrape.map(async (leagueIdentifier) => {
+    //     const playersByClub =
+    //       await this.scarperService.scrapeLeague(leagueIdentifier);
+    //     playersByClub.forEach(({ club, players }) =>
+    //       this.syncClubPlayers(leagueIdentifier, club, players),
+    //     );
+    //   }),
+    // );
   }
 }

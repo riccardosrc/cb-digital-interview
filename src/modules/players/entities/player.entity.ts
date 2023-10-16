@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { Salary, SalarySchema } from './salary.entity';
 
 export type PlayerDocument = HydratedDocument<Player>;
 
@@ -31,6 +32,9 @@ export class Player {
 
   @Prop()
   detailLink?: string;
+
+  @Prop({ type: [SalarySchema] })
+  salaryHistory: Salary[];
 }
 
 export const PlayerSchema = SchemaFactory.createForClass(Player);
