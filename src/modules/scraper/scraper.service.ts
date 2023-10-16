@@ -85,7 +85,7 @@ export class ScraperService implements OnApplicationBootstrap {
   async scrapeClubPlayers(clubLink: string) {
     const page = await this.getPage(`${this.scarpeBaseUrl}${clubLink}`);
     const playersData: PlayerData[] = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('tr'))
+      return Array.from(document.querySelectorAll('tbody > tr'))
         .filter((row) => !row.className && row.children.length === 6)
         .map((row) => Array.from(row.children))
         .map((row) => {
