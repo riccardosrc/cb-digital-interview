@@ -78,6 +78,26 @@ export class ScraperService implements OnApplicationBootstrap {
   }
 
   /**
+   * scrape all the links for clubs pages of the desired league
+   * @param league league target identifier
+   * @returns all the clubs links of the league
+   */
+  private async getClubLinksByLeague(league: string) {
+    const page = await this.getPage(`${this.scarpeBaseUrl}/football`);
+    const clubLinks = await page.evaluate((leagueIdentifier) => {
+      const headings = Array.from(document.querySelectorAll('h2'));
+      const targetHeading = headings.find(
+        (h) => h.innerText === leagueIdentifier,
+      );
+      const clubs = Array.from(targetHeading.nextElementSibling.children);
+      const links = clubs.map((club) => club.getAttribute('href'));
+      const clubLinks = links.filter((link) => !link.includes('highest-paid'));
+      return clubLinks;
+    }, league);
+    return clubLinks;
+  }
+
+  /**
    * scrape all the players data from the club page
    * @param clubLink link for club's players list
    * @returns players data
@@ -124,26 +144,6 @@ export class ScraperService implements OnApplicationBootstrap {
       .split('/')
       .filter((segment) => segment.length > 0)
       .pop();
-  }
-
-  /**
-   * scrape all the links for clubs pages of the desired league
-   * @param league league target identifier
-   * @returns all the clubs links of the league
-   */
-  private async getClubLinksByLeague(league: string) {
-    const page = await this.getPage(`${this.scarpeBaseUrl}/football`);
-    const clubLinks = await page.evaluate((leagueIdentifier) => {
-      const headings = Array.from(document.querySelectorAll('h2'));
-      const targetHeading = headings.find(
-        (h) => h.innerText === leagueIdentifier,
-      );
-      const clubs = Array.from(targetHeading.nextElementSibling.children);
-      const links = clubs.map((club) => club.getAttribute('href'));
-      const clubLinks = links.filter((link) => !link.includes('highest-paid'));
-      return clubLinks;
-    }, league);
-    return clubLinks;
   }
 
   async onApplicationBootstrap() {
