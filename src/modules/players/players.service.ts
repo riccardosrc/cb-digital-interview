@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model, SortOrder } from 'mongoose';
 import { Player } from './entities/player.entity';
 import { PlayerData } from './types/player-data.interface';
 import {
@@ -8,6 +8,8 @@ import {
   PaginationDto,
 } from 'src/common/types/pagination.dto';
 import { ScraperService } from '../scraper/scraper.service';
+import { SortDto } from 'src/common/types/sort.dto';
+import { PlayerFindOptionsDto } from './dto/players-find-options.dto';
 
 @Injectable()
 export class PlayersService implements OnApplicationBootstrap {
@@ -79,9 +81,22 @@ export class PlayersService implements OnApplicationBootstrap {
    */
   async findAll(
     paginationDto: PaginationDto,
+    sortDto: SortDto,
+    findOptionsDto: PlayerFindOptionsDto,
   ): Promise<PaginatedResponse<Player>> {
     const { skip, limit } = paginationDto.offset;
-    const players = await this.playerModel.find().limit(limit).skip(skip);
+    const sort: [string, SortOrder][] = [
+      [sortDto.sortBy ?? 'name', sortDto.sortDirection ?? 'asc'],
+    ];
+    const filter: FilterQuery<Player> = {};
+    if (findOptionsDto.name) {
+      filter.name = { $regex: new RegExp(findOptionsDto.name, 'i') };
+    }
+    const players = await this.playerModel
+      .find(filter)
+      .sort(sort)
+      .limit(limit)
+      .skip(skip);
     const count = await this.playerModel.count();
     return new PaginatedResponse<Player>(players, count);
   }
