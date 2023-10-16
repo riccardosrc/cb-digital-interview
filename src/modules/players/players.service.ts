@@ -1,14 +1,14 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, SortOrder } from 'mongoose';
-import { Player } from './entities/player.entity';
+import { Player, PlayerDocument } from './entities/player.entity';
 import { PlayerData } from './types/player-data.interface';
 import {
   PaginatedResponse,
   PaginationDto,
-} from 'src/common/types/pagination.dto';
+} from '../../common/types/pagination.dto';
 import { ScraperService } from '../scraper/scraper.service';
-import { SortDto } from 'src/common/types/sort.dto';
+import { SortDto } from '../../common/types/sort.dto';
 import { PlayerFindOptionsDto } from './dto/players-find-options.dto';
 
 @Injectable()
@@ -83,7 +83,7 @@ export class PlayersService implements OnApplicationBootstrap {
     paginationDto: PaginationDto,
     sortDto: SortDto,
     findOptionsDto: PlayerFindOptionsDto,
-  ): Promise<PaginatedResponse<Player>> {
+  ): Promise<PaginatedResponse<PlayerDocument>> {
     const { skip, limit } = paginationDto.offset;
     const sort: [string, SortOrder][] = [
       [sortDto.sortBy ?? 'name', sortDto.sortDirection ?? 'asc'],
@@ -98,7 +98,7 @@ export class PlayersService implements OnApplicationBootstrap {
       .limit(limit)
       .skip(skip);
     const count = await this.playerModel.count();
-    return new PaginatedResponse<Player>(players, count);
+    return new PaginatedResponse<PlayerDocument>(players, count);
   }
 
   /**
@@ -106,7 +106,7 @@ export class PlayersService implements OnApplicationBootstrap {
    * @param id player id
    * @returns player informations
    */
-  async findOne(id: string): Promise<Player> {
+  async findOne(id: string): Promise<PlayerDocument> {
     const player = await this.playerModel.findById(id);
     if (!player.detailLink || player.salaryHistory.length > 0) {
       // salary history not available or already saved!
