@@ -29,7 +29,7 @@ export class PlayersService {
 
   private async deleteClubPlayers(club: string) {
     const { deletedCount } = await this.playerModel.deleteMany({ club });
-    this.logger.log(`${club} players deleted successfullt (${deletedCount})`);
+    this.logger.log(`${club} players deleted successfully (${deletedCount})`);
   }
 
   async syncClubPlayers(club: string, players: PlayerData[]) {
