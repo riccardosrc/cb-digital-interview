@@ -6,6 +6,7 @@
 - [4. Environment](#4-environment)
 - [5. Running the application](#5-running-the-application)
 - [6. Served application](#6-served-application)
+- [7. Running unit test](#7-running-unit-test)
 
 ## 1. Overview
 
@@ -44,3 +45,13 @@ The application expose a swagger page that allow to keep the APIs well documente
 on the other hand, have a UI to test them without using other tools.
 
 > **_NOTE:_** the swagger url used to expose the interface should be configured in the `.env` file.
+
+## 7. Running unit test
+
+The unit tests were written using Jest framework.
+
+The following command runs unit tests:
+
+```bash
+$ pnpm run test
+```
