@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { FilterQuery, Model, SortOrder } from 'mongoose';
 import { Player, PlayerDocument } from './entities/player.entity';
 import { PlayerData } from './types/player-data.interface';
@@ -124,8 +125,10 @@ export class PlayersService implements OnApplicationBootstrap {
     return player;
   }
 
-  async onApplicationBootstrap() {
-    // sync all supported players
+  /**
+   * scrape all supported palyers from the supported leagues
+   */
+  async scrapeAllSupportedLeagues() {
     await Promise.allSettled(
       this.leagueToScrape.map(async (leagueIdentifier) => {
         const playersByClub =
@@ -135,5 +138,14 @@ export class PlayersService implements OnApplicationBootstrap {
         );
       }),
     );
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_1AM)
+  test() {
+    this.scrapeAllSupportedLeagues();
+  }
+
+  async onApplicationBootstrap() {
+    this.scrapeAllSupportedLeagues();
   }
 }
